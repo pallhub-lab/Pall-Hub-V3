@@ -1,67 +1,18 @@
 -- =============================================
 --   PALL HUB V3 (ULTIMATE EDITION 2026)
---   Integrasi: Anti-AFK Android 2026 & Rayfield
+--   Integrasi: Rayfield
+--   Update: Persistence Waypoint System + Pelangi Custom
 -- =============================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- [[ INTEGRASI ANTI-AFK ANDROID 2026 (ULTIMATE EDITION) ]] --
+-- [[ INTEGRASI CAMERA & FOV ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local VirtualUser = game:GetService("VirtualUser")
-
+local HttpService = game:GetService("HttpService")
 local LP = Players.LocalPlayer
-local interval = 45          -- Jeda antar aksi (detik)
-local lastAction = tick()
-
--- Fungsi Notifikasi Internal
-local function notifyAntiAfk(msg)
-    StarterGui:SetCore("SendNotification", {
-        Title = "🛡️ Anti-AFK Mobile",
-        Text = msg,
-        Duration = 5,
-    })
-end
-
--- Mencegah Kick IDLE (Metode Engine)
-LP.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new(0,0))
-    warn("Anti-AFK: Simulasi input dikirim pada " .. os.date("%X"))
-end)
-
--- Loop Utama Anti-AFK (Hemat Baterai & Real Mobile Input)
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if tick() - lastAction >= interval then
-            lastAction = tick()
-            
-            local char = LP.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            
-            if hum and hrp then
-                -- 1. Aksi Fisik: Lompat (Mencegah kick karakter statis)
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                
-                -- 2. Aksi Kamera: Putar 0.1 derajat (Simulasi input layar sentuh)
-                local cam = workspace.CurrentCamera
-                if cam then
-                    cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(0.1), 0)
-                end
-                
-                print("🛡️ Anti-AFK: Aktivitas tercatat pada " .. os.date("%X"))
-            end
-        end
-    end
-end)
-
-notifyAntiAfk("Status: AKTIF\nMode: Smart Hybrid\nSafe for Farming!")
--- [[ END ANTI-AFK ]] --
-
--- [[ INTEGRASI CAMERA & FOV ]] --
 local Camera = workspace.CurrentCamera
 local cameraSettingsActive = false
 local maxZoomValue = 500  
@@ -102,7 +53,7 @@ if gethui then Window.Parent = gethui() elseif game.CoreGui then Window.Parent =
 -- [[ VARIABEL SPEED PELANGI ]] --
 local speedOn = false
 local selendangPart = nil
-local currentWalkSpeed = 50
+local currentWalkSpeed = 100 
 local colors = {
     Color3.fromRGB(255,0,0),
     Color3.fromRGB(255,127,0),
@@ -195,46 +146,39 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local originalHoldDurations = {}
 
 -- [[ FUNGSI SPEED PELANGI ]] --
-local function lerpColor(c1, c2, t)
-    return Color3.new(
-        c1.R + (c2.R - c1.R) * t,
-        c1.G + (c2.G - c1.G) * t,
-        c1.B + (c2.B - c1.B) * t
-    )
-end
-
 local function addSelendang(char)
-    if selendangPart then selendangPart:Destroy() end
-    local torso = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso")
+    if char:FindFirstChild("SelendangPart") then char.SelendangPart:Destroy() end
+    
+    local torso = char:FindFirstChild("HumanoidRootPart")
     if not torso then return end
 
-    selendangPart = Instance.new("Part")
+    local selendangPart = Instance.new("Part")
     selendangPart.Name = "SelendangPart"
-    selendangPart.Size = Vector3.new(0.5, 0.5, 0.5)
+    selendangPart.Size = Vector3.new(0.1, 0.1, 0.1)
     selendangPart.Transparency = 1
     selendangPart.CanCollide = false
     selendangPart.Parent = char
 
-    local weld = Instance.new("WeldConstraint")
+    local weld = Instance.new("Weld")
     weld.Part0 = torso
     weld.Part1 = selendangPart
+    weld.C0 = CFrame.new(0, 0, 0)
     weld.Parent = selendangPart
 
     local trails = {}
-    for i = 1, 40 do
-        local yPos = 0.5 + (i-1) * -0.04
+    for i = 1, 5 do
         local attLeft = Instance.new("Attachment", selendangPart)
-        attLeft.Position = Vector3.new(-1, yPos, 0)
+        attLeft.Position = Vector3.new(-1, 1 - (i*0.4), 0)
         local attRight = Instance.new("Attachment", selendangPart)
-        attRight.Position = Vector3.new(1, yPos, 0)
+        attRight.Position = Vector3.new(1, 1 - (i*0.4), 0)
 
         local newTrail = Instance.new("Trail")
         newTrail.Attachment0 = attLeft
         newTrail.Attachment1 = attRight
-        newTrail.Lifetime = 0.6
-        newTrail.LightEmission = 1
+        newTrail.Lifetime = 0.5 
+        newTrail.LightEmission = 1 
         newTrail.Transparency = NumberSequence.new(0, 1)
-        newTrail.WidthScale = NumberSequence.new(0.5, 0)
+        newTrail.WidthScale = NumberSequence.new(1, 0)
         newTrail.Parent = selendangPart
         table.insert(trails, newTrail)
     end
@@ -242,23 +186,27 @@ local function addSelendang(char)
     task.spawn(function()
         local step = 0
         while speedOn and selendangPart and selendangPart.Parent do
-            local idx1 = math.floor(step) % #colors + 1
-            local idx2 = (idx1 % #colors) + 1
-            local t = step % 1
-            local col = lerpColor(colors[idx1], colors[idx2], t)
+            local colorIndex = (math.floor(step) % #colors) + 1
+            local nextIndex = (colorIndex % #colors) + 1
+            local lerpFactor = step % 1
+            
+            local c1 = colors[colorIndex]
+            local c2 = colors[nextIndex]
+            local currentColor = c1:Lerp(c2, lerpFactor)
+
             for _, tr in ipairs(trails) do
-                tr.Color = ColorSequence.new(col)
+                tr.Color = ColorSequence.new(currentColor)
             end
-            step += 0.02
-            task.wait(0.03)
+            
+            step = step + 0.05 
+            task.wait(0.02)
         end
     end)
 end
 
 local function removeSelendang()
-    if selendangPart then
-        selendangPart:Destroy()
-        selendangPart = nil
+    if LP.Character and LP.Character:FindFirstChild("SelendangPart") then
+        LP.Character.SelendangPart:Destroy()
     end
 end
 
@@ -312,11 +260,9 @@ _G.PlayerESPColor = Color3.fromRGB(0, 255, 0)
 _G.GenESPColor = Color3.fromRGB(0, 191, 255)
 
 local targetIdx = 1
-local Waypoints = {}
 local Mouse = LP:GetMouse()
 local UIS = game:GetService("UserInputService")
 
--- Simpan original settings
 local OriginalBrightness = Lighting.Brightness
 local OriginalClockTime = Lighting.ClockTime
 local OriginalFogEnd = Lighting.FogEnd
@@ -490,6 +436,30 @@ local function ApplyESP(p)
     if p.Character then CreateESP(p.Character) end
 end
 
+-- [[ KONFIGURASI PERSISTENCE WAYPOINT ]] --
+local Waypoints = {}
+local wpNameInput = ""
+local SaveFile = "PallHub_Waypoints.json"
+
+local function SaveWaypoints()
+    pcall(function()
+        writefile(SaveFile, HttpService:JSONEncode(Waypoints))
+    end)
+end
+
+local function LoadWaypoints()
+    if isfile(SaveFile) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(SaveFile))
+        end)
+        if success and typeof(data) == "table" then
+            Waypoints = data
+        end
+    end
+end
+
+LoadWaypoints()
+
 local MainTab = Window:CreateTab("Main", 4483362458)
 local VisualTab = Window:CreateTab("Visuals", 4483362458)
 local ScriptTab = Window:CreateTab("Scripts", 4483362458)
@@ -518,7 +488,7 @@ MainTab:CreateSlider({
     Range = {16, 250}, 
     Increment = 1, 
     Suffix = "Speed", 
-    CurrentValue = 50, 
+    CurrentValue = 100, 
     Callback = function(v) 
         currentWalkSpeed = v 
         if speedOn and LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -665,21 +635,69 @@ ScriptTab:CreateButton({Name = "Give Click TP Tool", Callback = function()
     tool.Parent = LP.Backpack
 end})
 
-local wpNameInput = ""
-WaypointTab:CreateInput({Name = "Waypoint Name", PlaceholderText = "Nama tempat...", Callback = function(t) wpNameInput = t end})
-WaypointTab:CreateButton({Name = "Save Current Position", Callback = function()
-    local name = wpNameInput ~= "" and wpNameInput or "Pos " .. os.time()
-    if LP.Character then
+-- [[ SISTEM WAYPOINT BARU ]] --
+WaypointTab:CreateSection("Manajemen Lokasi")
+WaypointTab:CreateInput({
+    Name = "Nama Waypoint",
+    PlaceholderText = "Contoh: Base / Farm / Tower...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(t) wpNameInput = t end
+})
+
+WaypointTab:CreateButton({
+    Name = "💾 Simpan Posisi Sekarang",
+    Callback = function()
+        if not (LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")) then
+            return Rayfield:Notify({Title = "Error", Content = "Character belum load!", Duration = 3})
+        end
+        local name = (wpNameInput ~= "" and wpNameInput) or ("Pos " .. os.date("%X"))
+        for _, wp in ipairs(Waypoints) do
+            if wp.Name == name then
+                return Rayfield:Notify({Title = "Error", Content = "Nama waypoint sudah ada!", Duration = 3})
+            end
+        end
         local pos = LP.Character.HumanoidRootPart.CFrame
-        local wp = {Name = name, Position = {pos.X, pos.Y, pos.Z, pos.LookVector.X, pos.LookVector.Y, pos.LookVector.Z}}
-        table.insert(Waypoints, wp)
-        WaypointTab:CreateButton({Name = "Teleport to: " .. name, Callback = function()
-            LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(Vector3.new(wp.Position[1],wp.Position[2],wp.Position[3]), Vector3.new(wp.Position[1],wp.Position[2],wp.Position[3]) + Vector3.new(wp.Position[4],wp.Position[5],wp.Position[6]))
-        end})
-        CustomNotify("Saved!", name .. " saved!", 3)
+        local posTable = {pos:GetComponents()}
+        table.insert(Waypoints, {Name = name, CFrameData = posTable})
+        WaypointTab:CreateButton({
+            Name = "📍 Teleport ke: " .. name,
+            Callback = function()
+                if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                    LP.Character.HumanoidRootPart.CFrame = CFrame.new(unpack(posTable))
+                    CustomNotify("Teleport Berhasil", "→ " .. name, 2)
+                end
+            end
+        })
+        SaveWaypoints()
+        CustomNotify("Sistem Waypoint", "✅ '" .. name .. "' berhasil disimpan!", 3)
+        wpNameInput = "" 
     end
+})
+
+WaypointTab:CreateSection("Daftar Teleport")
+for _, wp in ipairs(Waypoints) do
+    WaypointTab:CreateButton({
+        Name = "📍 Teleport ke: " .. wp.Name,
+        Callback = function()
+            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                LP.Character.HumanoidRootPart.CFrame = CFrame.new(unpack(wp.CFrameData))
+                CustomNotify("Teleport Berhasil", "→ " .. wp.Name, 2)
+            end
+        end
+    })
+end
+
+WaypointTab:CreateButton({Name = "🗑️ Hapus Semua Waypoint", Callback = function()
+    Waypoints = {}
+    if isfile(SaveFile) then delfile(SaveFile) end
+    CustomNotify("Clear All", "Semua waypoint dihapus! Silakan Restart Script.", 5)
 end})
 
+WaypointTab:CreateButton({Name = "🔄 Refresh UI", Callback = function()
+    CustomNotify("Info", "Jalankan ulang script untuk melihat daftar terbaru.", 4)
+end})
+
+-- [[ SETTINGS TAB ]] --
 SettingTab:CreateSection("Protection")
 SettingTab:CreateButton({
     Name = "SAFE MODE (Emergency Stop)",
@@ -705,7 +723,6 @@ SettingTab:CreateButton({
     end
 })
 
-SettingTab:CreateSection("GUI Settings")
 SettingTab:CreateKeybind({
    Name = "UI Toggle Keybind",
    CurrentKeybind = "RightControl",
@@ -722,6 +739,7 @@ SettingTab:CreateButton({
     end
 })
 
+-- [[ SERVICES & LOOPS ]] --
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe or not _G.FlyEnabled then return end
     if input.KeyCode == Enum.KeyCode.W then pressed.Up = true end
@@ -736,22 +754,12 @@ UIS.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.D then pressed.Right = false end
 end)
 
--- [[ UPDATE: AUTO CLEAN NEW OBJECTS ]] --
 Workspace.DescendantAdded:Connect(function(obj)
-	if fpsBoosterActive then
-        task.delay(0.05, function()
-		    Optimize(obj)
-        end)
-	end
+	if fpsBoosterActive then task.delay(0.05, function() Optimize(obj) end) end
 end)
 
 RunService.Heartbeat:Connect(function(dt)
-    -- Update Loop FPS Booster
-    if fpsBoosterActive then 
-        Lighting.GlobalShadows = false 
-        CleanEffects() 
-    end
-    
+    if fpsBoosterActive then Lighting.GlobalShadows = false; CleanEffects() end
     pcall(function()
         local char = LP.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -788,10 +796,7 @@ RunService.Heartbeat:Connect(function(dt)
 
         if hum then
             if _G.NoClip then for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
-            if _G.FullGodMode then
-                hum.MaxHealth = math.huge; hum.Health = math.huge
-                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-            end
+            if _G.FullGodMode then hum.MaxHealth = math.huge; hum.Health = math.huge; hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end
         end
     end)
 end)
@@ -808,7 +813,7 @@ task.spawn(function()
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local hrp = p.Character.HumanoidRootPart
-                if _G.HEnabled then hrp.Size = Vector3.new(_G.HSize,_G.HSize,_G.HSize); hrp.Transparency = 0.7; hrp.CanCollide = false 
+                if _G.HEnabled then hrp.Size = Vector3.new(_G.HSize, _G.HSize, _G.HSize); hrp.Transparency = 0.7; hrp.CanCollide = false 
                 else hrp.Size = Vector3.new(2,2,1); hrp.Transparency = 1; hrp.CanCollide = true end
             end
         end
@@ -830,9 +835,7 @@ task.spawn(function()
 end)
 
 UIS.JumpRequest:Connect(function()
-    if _G.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid:ChangeState("Jumping")
-    end
+    if _G.InfJump and LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid:ChangeState("Jumping") end
 end)
 
-CustomNotify("Pall Hub V3", "Script Ready! Ultimate FPS 2026 Integrated.", 6)
+CustomNotify("Pall Hub V3", "Script Ready! Anti-AFK Removed.", 6)
