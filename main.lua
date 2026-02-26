@@ -1,16 +1,89 @@
+-- =============================================
+--   PALL HUB V3 (ULTIMATE EDITION 2026)
+--   Integrasi: Anti-AFK Android 2026 & Rayfield
+-- =============================================
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- [[ INTEGRASI ANTI-AFK ]] --
+-- [[ INTEGRASI ANTI-AFK ANDROID 2026 (ULTIMATE EDITION) ]] --
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 local VirtualUser = game:GetService("VirtualUser")
 
+local LP = Players.LocalPlayer
+local interval = 45          -- Jeda antar aksi (detik)
+local lastAction = tick()
+
+-- Fungsi Notifikasi Internal
+local function notifyAntiAfk(msg)
+    StarterGui:SetCore("SendNotification", {
+        Title = "🛡️ Anti-AFK Mobile",
+        Text = msg,
+        Duration = 5,
+    })
+end
+
+-- Mencegah Kick IDLE (Metode Engine)
 LP.Idled:Connect(function()
     VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-    warn("Anti-AFK: Simulasi input dikirim untuk mencegah kick pada " .. os.date("%X"))
+    VirtualUser:ClickButton2(Vector2.new(0,0))
+    warn("Anti-AFK: Simulasi input dikirim pada " .. os.date("%X"))
 end)
+
+-- Loop Utama Anti-AFK (Hemat Baterai & Real Mobile Input)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if tick() - lastAction >= interval then
+            lastAction = tick()
+            
+            local char = LP.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            
+            if hum and hrp then
+                -- 1. Aksi Fisik: Lompat (Mencegah kick karakter statis)
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                
+                -- 2. Aksi Kamera: Putar 0.1 derajat (Simulasi input layar sentuh)
+                local cam = workspace.CurrentCamera
+                if cam then
+                    cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(0.1), 0)
+                end
+                
+                print("🛡️ Anti-AFK: Aktivitas tercatat pada " .. os.date("%X"))
+            end
+        end
+    end
+end)
+
+notifyAntiAfk("Status: AKTIF\nMode: Smart Hybrid\nSafe for Farming!")
 -- [[ END ANTI-AFK ]] --
+
+-- [[ INTEGRASI CAMERA & FOV ]] --
+local Camera = workspace.CurrentCamera
+local cameraSettingsActive = false
+local maxZoomValue = 500  
+local fovValue = 90       
+
+task.spawn(function()
+    while true do
+        if cameraSettingsActive then
+            if LP.CameraMaxZoomDistance ~= maxZoomValue then
+                LP.CameraMaxZoomDistance = maxZoomValue
+            end
+            if LP.CameraMinZoomDistance ~= 0.5 then
+                LP.CameraMinZoomDistance = 0.5
+            end
+            if Camera.FieldOfView ~= fovValue then
+                Camera.FieldOfView = fovValue
+            end
+        end
+        task.wait(1)
+    end
+end)
+-- [[ END INTEGRASI CAMERA ]] --
 
 local Window = Rayfield:CreateWindow({
    Name = "PALL HUB V3 - UNIVERSAL",
@@ -40,12 +113,81 @@ local colors = {
     Color3.fromRGB(148,0,211)
 }
 
--- [[ VARIABEL ANTI LAG ]] --
-local LightingService = game:GetService("Lighting")
-local Terrain = workspace:FindFirstChildOfClass("Terrain")
-local antiLagActive = false
-local originalStates = {}
-local connections = {}
+-- [[ ================== ULTIMATE FPS BOOSTER 2026 INTEGRATION ================== ]] --
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local fpsBoosterActive = false
+local FoliageNames = {"tree","rock","grass","bush","stone","leaf","boulder","pine","plant","flower","fern","ivy","shrub","log"}
+
+local function CleanEffects()
+	for _, v in pairs(Lighting:GetChildren()) do
+		if v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("BloomEffect") 
+		or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") 
+		or v:IsA("DepthOfFieldEffect") or v:IsA("Clouds") then
+			v:Destroy()
+		end
+	end
+end
+
+local function Optimize(obj)
+    if not fpsBoosterActive then return end
+	if not obj or not obj.Parent then return end
+	
+	if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") 
+	or obj:IsA("Sparkles") or obj:IsA("Trail") then
+		obj.Enabled = false
+		return
+	end
+	
+	if obj:IsA("Decal") or obj:IsA("Texture") then
+		obj:Destroy()
+		return
+	end
+	
+	if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("Model") then
+		local nameLower = obj.Name:lower()
+		for _, keyword in ipairs(FoliageNames) do
+			if nameLower:find(keyword) then
+				obj:Destroy()
+				return
+			end
+		end
+		
+		if obj:IsA("BasePart") then
+			obj.Material = Enum.Material.Plastic
+			obj.Reflectance = 0
+			obj.CastShadow = false
+		end
+	end
+end
+
+local function ApplyFullBoost()
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+    
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    Lighting.Brightness = 1
+    Lighting.OutdoorAmbient = Color3.fromRGB(120, 120, 120)
+    Lighting.ClockTime = 12
+    Lighting.EnvironmentDiffuseScale = 0.2
+    Lighting.EnvironmentSpecularScale = 0.1
+    CleanEffects()
+
+    local terrain = Workspace:FindFirstChildOfClass("Terrain")
+    if terrain then
+        terrain.Decoration = false
+        terrain.WaterWaveSize = 0
+        terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0
+        terrain.WaterTransparency = 1
+    end
+
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        Optimize(v)
+    end
+end
+-- [[ ================== END FPS BOOSTER INTEGRATION ================== ]] --
 
 -- [[ VARIABEL INSTANT PROXIMITY ]] --
 local instantPromptActive = false
@@ -134,89 +276,6 @@ local function resetPrompt(prompt)
     end
 end
 
--- [[ FUNGSI ANTI LAG ]] --
-local function saveState(v)
-    if not originalStates[v] then
-        if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") or v:IsA("MeshPart") then
-            originalStates[v] = {
-                Material = v.Material,
-                Reflectance = v.Reflectance,
-                TextureID = v:IsA("MeshPart") and v.TextureID or nil
-            }
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            originalStates[v] = {Transparency = v.Transparency}
-        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-            originalStates[v] = {Lifetime = v.Lifetime, Enabled = v.Enabled}
-        elseif v:IsA("Explosion") then
-            originalStates[v] = {BlastPressure = v.BlastPressure, BlastRadius = v.BlastRadius}
-        elseif v:IsA("Fire") or v:IsA("Smoke") or v:IsA("Sparkles") then
-            originalStates[v] = {Enabled = v.Enabled}
-        elseif v:IsA("Sound") then
-            originalStates[v] = {Playing = v.Playing}
-        elseif v:IsA("Light") or v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
-            originalStates[v] = {Enabled = v.Enabled}
-        end
-    end
-end
-
-local function makeBurik(v)
-    saveState(v)
-    if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
-        v.Material = Enum.Material.Plastic
-        v.Reflectance = 0
-    elseif v:IsA("Decal") or v:IsA("Texture") then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-        v.Enabled = false
-    elseif v:IsA("MeshPart") then
-        v.Material = Enum.Material.Plastic
-        v.Reflectance = 0
-        v.TextureID = ""
-    elseif v:IsA("Light") or v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
-        v.Enabled = false
-    end
-end
-
-local function applyAntiLag()
-    antiLagActive = true
-    if Terrain then
-        originalStates[Terrain] = {
-            WaterWaveSize = Terrain.WaterWaveSize,
-            WaterWaveSpeed = Terrain.WaterWaveSpeed,
-            WaterReflectance = Terrain.WaterReflectance,
-            WaterTransparency = Terrain.WaterTransparency
-        }
-        Terrain.WaterWaveSize = 0
-        Terrain.WaterWaveSpeed = 0
-        Terrain.WaterReflectance = 0
-        Terrain.WaterTransparency = 0
-    end
-    LightingService.GlobalShadows = false
-    LightingService.Brightness = 0
-    settings().Rendering.QualityLevel = "Level01"
-    for _, v in pairs(game:GetDescendants()) do
-        makeBurik(v)
-    end
-    connections[#connections+1] = game.DescendantAdded:Connect(function(obj)
-        if antiLagActive then makeBurik(obj) end
-    end)
-end
-
-local function resetAntiLag()
-    antiLagActive = false
-    for obj, state in pairs(originalStates) do
-        if obj and obj.Parent then
-            for prop, val in pairs(state) do
-                pcall(function() obj[prop] = val end)
-            end
-        end
-    end
-    originalStates = {}
-    for _, c in pairs(connections) do c:Disconnect() end
-    connections = {}
-end
-
 -- [[ FUNGSI SPECTATE FEATURE ]] --
 local function SpectateFeature()
     local success, response = pcall(function()
@@ -255,10 +314,7 @@ _G.GenESPColor = Color3.fromRGB(0, 191, 255)
 local targetIdx = 1
 local Waypoints = {}
 local Mouse = LP:GetMouse()
-local Camera = workspace.CurrentCamera
 local UIS = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
-local RunService = game:GetService("RunService")
 
 -- Simpan original settings
 local OriginalBrightness = Lighting.Brightness
@@ -359,7 +415,6 @@ LP.CharacterAdded:Connect(function(char)
     setupAnimator(humanoid)
     if _G.FlyEnabled then disableFly(); _G.FlyEnabled = false end
     
-    -- Auto re-apply rainbow speed if on
     if speedOn then
         task.wait(0.5)
         local hum = char:WaitForChild("Humanoid")
@@ -439,9 +494,9 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local VisualTab = Window:CreateTab("Visuals", 4483362458)
 local ScriptTab = Window:CreateTab("Scripts", 4483362458)
 local WaypointTab = Window:CreateTab("Waypoints", 4483362458)
+local SettingTab = Window:CreateTab("Settings", 4483362458)
 
 MainTab:CreateSection("Movement")
--- [[ SPEED PELANGI INTEGRATION ]] --
 MainTab:CreateToggle({
     Name = "Speed Pelangi 🌈", 
     CurrentValue = false, 
@@ -472,7 +527,6 @@ MainTab:CreateSlider({
     end
 })
 
--- [[ INSTANT PROXIMITY TOGGLE ]] --
 MainTab:CreateToggle({
     Name = "Instant Interaction (No Hold)", 
     CurrentValue = false, 
@@ -480,27 +534,19 @@ MainTab:CreateToggle({
         instantPromptActive = v
         if instantPromptActive then
             for _, prompt in pairs(game:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then
-                    makeInstant(prompt)
-                end
+                if prompt:IsA("ProximityPrompt") then makeInstant(prompt) end
             end
         else
             for _, prompt in pairs(game:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then
-                    resetPrompt(prompt)
-                end
+                if prompt:IsA("ProximityPrompt") then resetPrompt(prompt) end
             end
         end
     end
 })
 
--- Connect Proximity Service
 ProximityPromptService.PromptShown:Connect(function(prompt)
-    if instantPromptActive then
-        makeInstant(prompt)
-    end
+    if instantPromptActive then makeInstant(prompt) end
 end)
--- [[ END INSTANT PROXIMITY ]] --
 
 MainTab:CreateToggle({Name = "Infinite Jump", CurrentValue = false, Callback = function(v) _G.InfJump = v end})
 MainTab:CreateToggle({Name = "Noclip", CurrentValue = false, Callback = function(v) _G.NoClip = v end})
@@ -541,10 +587,54 @@ MainTab:CreateButton({Name = "Reset Camera (Self)", Callback = function()
     end
 end})
 
-VisualTab:CreateSection("Performance")
-VisualTab:CreateToggle({Name = "Anti Lag (Low Graphics)", CurrentValue = false, Callback = function(v)
-    if v then applyAntiLag(); CustomNotify("Anti Lag", "Boost FPS Aktif!", 3) else resetAntiLag(); CustomNotify("Anti Lag", "Grafik dikembalikan ke awal.", 3) end
-end})
+VisualTab:CreateSection("Ultimate Performance")
+VisualTab:CreateToggle({
+    Name = "Ultimate FPS Booster 2026", 
+    CurrentValue = false, 
+    Callback = function(v)
+        fpsBoosterActive = v
+        if v then
+            ApplyFullBoost()
+            CustomNotify("FPS Booster", "Optimasi 2026 Aktif! Visual dibersihkan.", 4)
+        else
+            CustomNotify("FPS Booster", "Silakan Rejoin untuk reset grafik ke normal.", 5)
+        end
+    end
+})
+
+VisualTab:CreateSection("Camera & Field of View")
+VisualTab:CreateToggle({
+    Name = "Enable Max Zoom & FOV", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        cameraSettingsActive = v
+        if not v then
+            LP.CameraMaxZoomDistance = 128
+            LP.CameraMinZoomDistance = 0.5
+            Camera.FieldOfView = 70
+        else
+            CustomNotify("Camera", "Zoom & FOV Aktif", 3)
+        end
+    end
+})
+
+VisualTab:CreateSlider({
+    Name = "FOV Value", 
+    Range = {30, 120}, 
+    Increment = 1, 
+    Suffix = "°", 
+    CurrentValue = 90, 
+    Callback = function(v) fovValue = v end
+})
+
+VisualTab:CreateSlider({
+    Name = "Max Zoom Distance", 
+    Range = {128, 2000}, 
+    Increment = 10, 
+    Suffix = " Studs", 
+    CurrentValue = 500, 
+    Callback = function(v) maxZoomValue = v end
+})
 
 VisualTab:CreateSection("ESP & Lighting")
 VisualTab:CreateToggle({Name = "Player ESP", CurrentValue = false, Callback = function(v)
@@ -559,14 +649,10 @@ VisualTab:CreateToggle({Name = "No Fog", CurrentValue = false, Callback = functi
 VisualTab:CreateToggle({Name = "Enable Notifications", CurrentValue = true, Callback = function(v) _G.NotificationsEnabled = v end})
 
 ScriptTab:CreateSection("Fayint Exploits")
--- [[ INTEGRASI SCRIPT BARU ]] --
 ScriptTab:CreateButton({
     Name = "Custom Jump (Fayint)", 
-    Callback = function() 
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintExploit/refs/heads/main/Costum-Jump"))() 
-    end
+    Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintExploit/refs/heads/main/Costum-Jump"))() end
 })
--- [[ END INTEGRASI SCRIPT BARU ]] --
 ScriptTab:CreateButton({Name = "Copy Avatar", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintExploit/refs/heads/main/Copy-Avatar"))() end})
 ScriptTab:CreateButton({Name = "FE Emotes (NV)", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintExploit/refs/heads/main/FE-Emotes"))() end})
 ScriptTab:CreateButton({Name = "Global Music", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FayintXhub/FayintExploit/refs/heads/main/Global-Music"))() end})
@@ -594,6 +680,48 @@ WaypointTab:CreateButton({Name = "Save Current Position", Callback = function()
     end
 end})
 
+SettingTab:CreateSection("Protection")
+SettingTab:CreateButton({
+    Name = "SAFE MODE (Emergency Stop)",
+    Callback = function()
+        _G.FlyEnabled = false
+        disableFly()
+        _G.InfJump = false
+        _G.NoClip = false
+        speedOn = false
+        fpsBoosterActive = false
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.WalkSpeed = 16 end
+        removeSelendang()
+        _G.ESPEnabled = false
+        DestroyPlayerESP()
+        _G.GenESPEnabled = false
+        _G.FullBright = false
+        _G.NoFog = false
+        _G.SemiGodMode = false
+        _G.FullGodMode = false
+        _G.HEnabled = false
+        _G.HSize = 2
+        CustomNotify("SAFE MODE", "Semua fitur berbahaya telah dimatikan!", 5)
+    end
+})
+
+SettingTab:CreateSection("GUI Settings")
+SettingTab:CreateKeybind({
+   Name = "UI Toggle Keybind",
+   CurrentKeybind = "RightControl",
+   HoldToInteract = false,
+   Flag = "ToggleKeybind",
+   Callback = function(Keybind) Rayfield:ToggleUI() end,
+})
+
+SettingTab:CreateButton({
+    Name = "Unload Script",
+    Callback = function()
+        Rayfield:Destroy()
+        if gui then gui:Destroy() end
+    end
+})
+
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe or not _G.FlyEnabled then return end
     if input.KeyCode == Enum.KeyCode.W then pressed.Up = true end
@@ -608,40 +736,47 @@ UIS.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.D then pressed.Right = false end
 end)
 
--- [[ MAIN RUNSERVICE LOOP ]] --
+-- [[ UPDATE: AUTO CLEAN NEW OBJECTS ]] --
+Workspace.DescendantAdded:Connect(function(obj)
+	if fpsBoosterActive then
+        task.delay(0.05, function()
+		    Optimize(obj)
+        end)
+	end
+end)
+
 RunService.Heartbeat:Connect(function(dt)
+    -- Update Loop FPS Booster
+    if fpsBoosterActive then 
+        Lighting.GlobalShadows = false 
+        CleanEffects() 
+    end
+    
     pcall(function()
         local char = LP.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local hrp = char.HumanoidRootPart
         local hum = char:FindFirstChildOfClass("Humanoid")
 
-        -- LOGIKA FLY BARU
         if _G.FlyEnabled then
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            
             local cam = workspace.CurrentCamera
             local lookVec = cam.CFrame.LookVector
             local rightVec = cam.CFrame.RightVector
             local dir = Vector3.zero
-
             if pressed.Up then dir += lookVec end
             if pressed.Down then dir -= lookVec end
             if pressed.Left then dir -= rightVec end
             if pressed.Right then dir += rightVec end
-
             if dir.Magnitude > 0 then
                 moving = true
                 frozenPos = hrp.Position + dir.Unit * _G.FlySpeed * dt * 60
                 hrp.CFrame = CFrame.new(frozenPos, frozenPos + lookVec)
             else
                 moving = false
-                if frozenPos and savedOrientation then
-                    hrp.CFrame = CFrame.new(frozenPos) * savedOrientation
-                end
+                if frozenPos and savedOrientation then hrp.CFrame = CFrame.new(frozenPos) * savedOrientation end
             end
-
             if moving then
                 if animTracks.Idle and animTracks.Idle.IsPlaying then animTracks.Idle:Stop() end
                 if animTracks.Fly and not animTracks.Fly.IsPlaying then animTracks.Fly:Play() end
@@ -651,7 +786,6 @@ RunService.Heartbeat:Connect(function(dt)
             end
         end
 
-        -- NOCLIP & GOD
         if hum then
             if _G.NoClip then for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
             if _G.FullGodMode then
@@ -662,10 +796,9 @@ RunService.Heartbeat:Connect(function(dt)
     end)
 end)
 
--- [[ ASYNC BACKGROUND TASKS ]] --
 task.spawn(function()
     while task.wait(0.5) do
-        if not antiLagActive then
+        if not fpsBoosterActive then
             if _G.FullBright then Lighting.Brightness = 2; Lighting.ClockTime = 14; Lighting.GlobalShadows = false 
             elseif Lighting.Brightness ~= OriginalBrightness then Lighting.Brightness = OriginalBrightness; Lighting.ClockTime = OriginalClockTime; Lighting.GlobalShadows = OriginalGlobalShadows end
             if _G.NoFog then Lighting.FogEnd = 100000; Lighting.FogStart = 0; if Atmosphere then Atmosphere.Density = 0; Atmosphere.Offset = 0 end
@@ -702,4 +835,4 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
-CustomNotify("Pall Hub V3", "Script Ready! Anti-AFK Aktif.", 6)
+CustomNotify("Pall Hub V3", "Script Ready! Ultimate FPS 2026 Integrated.", 6)
