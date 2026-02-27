@@ -374,15 +374,20 @@ local function CustomNotify(title, content, duration)
     Rayfield:Notify({Title = title, Content = content, Duration = duration or 5})
 end
 
-local function applySemiGod(char)
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.HealthChanged:Connect(function(health)
-            if _G.SemiGodMode and health < hum.MaxHealth then hum.Health = hum.MaxHealth end
-        end)
-        if _G.SemiGodMode then hum.Health = hum.MaxHealth end
-    end
+-- [[ UPDATED SEMI GOD MODE ]] --
+local function applySemiGod()
+    task.spawn(function()
+        while _G.SemiGodMode do
+            local char = LP.Character
+            if char and char:FindFirstChild("Humanoid") then
+                local hum = char.Humanoid
+                if hum.Health < hum.MaxHealth then
+                    hum.Health = hum.MaxHealth
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
 end
 
 local function applyFullGod(char)
@@ -404,9 +409,8 @@ end
 LP.CharacterAdded:Connect(function(char)
     task.wait(0.5)
     if _G.FullGodMode then applyFullGod(char) end
-    if _G.SemiGodMode then applySemiGod(char) end
+    -- Tidak perlu panggil applySemiGod di sini, loop di function sudah menangani sendiri
 end)
-if LP.Character then applySemiGod(LP.Character) end
 
 local function DestroyPlayerESP()
     for _, p in pairs(Players:GetPlayers()) do
@@ -527,7 +531,13 @@ end})
 MainTab:CreateSlider({Name = "Fly Speed", Range = {1, 20}, Increment = 0.5, Suffix = "Speed", CurrentValue = 2, Callback = function(v) _G.FlySpeed = v end})
 
 MainTab:CreateSection("Combat / God")
-MainTab:CreateToggle({Name = "Semi God Mode", CurrentValue = false, Callback = function(v) _G.SemiGodMode = v; if v and LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.Health = LP.Character.Humanoid.MaxHealth end end})
+MainTab:CreateToggle({Name = "Semi God Mode", CurrentValue = false, Callback = function(v) 
+    _G.SemiGodMode = v 
+    if v then 
+        applySemiGod() 
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.Health = LP.Character.Humanoid.MaxHealth end
+    end 
+end})
 MainTab:CreateToggle({Name = "Full God Mode (Universal)", CurrentValue = false, Callback = function(v) _G.FullGodMode = v; if v and LP.Character then applyFullGod(LP.Character) end end})
 MainTab:CreateToggle({Name = "Hitbox (Big Head)", CurrentValue = false, Callback = function(v) _G.HEnabled = v; _G.HSize = v and 15 or 2 end})
 
@@ -559,6 +569,15 @@ end})
 
 VisualTab:CreateSection("Ultimate Performance")
 VisualTab:CreateToggle({
+    Name = "Rendering",
+    CurrentValue = true,
+    Flag = "universal_rendering",
+    Callback = function(state)
+        game:GetService('RunService'):Set3dRenderingEnabled(state)
+    end,
+})
+
+VisualTab:CreateToggle({
     Name = "Ultimate FPS Booster 2026", 
     CurrentValue = false, 
     Callback = function(v)
@@ -570,6 +589,15 @@ VisualTab:CreateToggle({
             CustomNotify("FPS Booster", "Silakan Rejoin untuk reset grafik ke normal.", 5)
         end
     end
+})
+
+VisualTab:CreateInput({ 
+	Name='FPS Cap', 
+	PlaceholderText='60', 
+	RemoveTextAfterFocusLost=false, 
+	Callback=function(i) 
+		setfpscap(i+0) 
+	end, 
 })
 
 VisualTab:CreateSection("Camera & Field of View")
