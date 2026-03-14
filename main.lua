@@ -141,9 +141,14 @@ end
 -- [[ ================== END FPS BOOSTER INTEGRATION ================== ]] --
 
 -- [[ VARIABEL INSTANT PROXIMITY ]] --
-local instantPromptActive = false
 local ProximityPromptService = game:GetService("ProximityPromptService")
-local originalHoldDurations = {}
+local instantInteractEnabled = false
+
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, player)
+    if instantInteractEnabled and player == game.Players.LocalPlayer then
+        fireproximityprompt(prompt)
+    end
+end)
 
 -- [[ FUNGSI SPEED PELANGI ]] --
 local function addSelendang(char)
@@ -207,20 +212,6 @@ end
 local function removeSelendang()
     if LP.Character and LP.Character:FindFirstChild("SelendangPart") then
         LP.Character.SelendangPart:Destroy()
-    end
-end
-
--- [[ FUNGSI INSTANT PROXIMITY ]] --
-local function makeInstant(prompt)
-    if not originalHoldDurations[prompt] then
-        originalHoldDurations[prompt] = prompt.HoldDuration
-    end
-    prompt.HoldDuration = 0
-end
-
-local function resetPrompt(prompt)
-    if originalHoldDurations[prompt] then
-        prompt.HoldDuration = originalHoldDurations[prompt]
     end
 end
 
@@ -505,22 +496,9 @@ MainTab:CreateToggle({
     Name = "Instant Interaction (No Hold)", 
     CurrentValue = false, 
     Callback = function(v) 
-        instantPromptActive = v
-        if instantPromptActive then
-            for _, prompt in pairs(game:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then makeInstant(prompt) end
-            end
-        else
-            for _, prompt in pairs(game:GetDescendants()) do
-                if prompt:IsA("ProximityPrompt") then resetPrompt(prompt) end
-            end
-        end
+        instantInteractEnabled = v
     end
 })
-
-ProximityPromptService.PromptShown:Connect(function(prompt)
-    if instantPromptActive then makeInstant(prompt) end
-end)
 
 MainTab:CreateToggle({Name = "Infinite Jump", CurrentValue = false, Callback = function(v) _G.InfJump = v end})
 MainTab:CreateToggle({Name = "Noclip", CurrentValue = false, Callback = function(v) _G.NoClip = v end})
